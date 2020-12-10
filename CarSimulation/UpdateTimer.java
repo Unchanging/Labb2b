@@ -11,7 +11,6 @@ public class UpdateTimer implements ActionListener {
 
 	public UpdateTimer(ModelControl model) {
 		this.model = model;
-		timer.start();
 	}
 
 	public void setDelay(int milliSeconds) {

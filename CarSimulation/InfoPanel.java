@@ -10,6 +10,7 @@ public class InfoPanel extends JLabel implements VehicleUpdateListener{
 
 	private final ModelPresenter model;
 
+
 	public InfoPanel(ModelPresenter model, int X) {
 		super();
 		this.model = model;
@@ -18,13 +19,13 @@ public class InfoPanel extends JLabel implements VehicleUpdateListener{
 	}
 
 	@Override
-	public void vehicleUpdate() {
+	public void vehicleUpdate() { // When changes in the model trigger the updateListener this method will renew the rendred text.
 		Iterator<? extends VehiclePresentation> iterator = model.getVehicleIterator();
 		StringBuilder builder = new StringBuilder();
-		builder.append("<html>");
+		builder.append("<html>"); // HTML tag is used to more fluently flow the text
 		while (iterator.hasNext()) {
 			VehiclePresentation vehicle = iterator.next();
-			builder.append(String.format("%s: %s <br/>", vehicle.getModelName(), vehicle.getCurrentSpeed()));
+			builder.append(String.format("%s: %s <br/>", vehicle.getModelName(), vehicle.getCurrentSpeed())); // See the interface VehiclePresentation for the information you can display here.
 		}
 		builder.append("</html>");
 		this.setText(builder.toString());

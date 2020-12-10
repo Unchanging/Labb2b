@@ -6,9 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MouseController implements MouseListener {
-	private ModelControl model;
-	private int state;
-	private List<MouseControllerListener> listeners = new ArrayList<>();
+	private final ModelControl model;
+	private final List<MouseControllerListener> listeners = new ArrayList<>();
+
+	//A controller which alerts listeners to clicks
 
 	public MouseController(ModelControl model) {
 		this.model = model;

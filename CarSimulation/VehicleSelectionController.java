@@ -3,12 +3,17 @@ package CarSimulation;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class VehicleSelectionController extends JPanel implements MouseControllerListener {
-	private ModelControl model;
-	private int width;
+
+	// A controller for adding or removing vehicles from a model.
+
+	private final ModelControl model;
+	private final int width;
 	private final JPanel internalJPanel;
+	private Map<String, JButton> buttonMap;
 	private boolean mouseForInput = false;
 
 	private Consumer<MouseEvent> vehicleAction = e -> {};
@@ -21,10 +26,17 @@ public class VehicleSelectionController extends JPanel implements MouseControlle
 
 		internalJPanel = new JPanel();
 		internalJPanel.setLayout(new GridLayout(1,modelNames.length));
-		internalJPanel.setPreferredSize(new Dimension((width/2)+4, 200));
+		internalJPanel.setPreferredSize(new Dimension((int)(width*0.7), 200));
 		fillInternalJPanel(modelNames);
 
 		this.add(internalJPanel);
+	}
+
+	private void toggleMouse() {
+		if(mouseForInput)
+			disableMouseInput();
+		else
+			useMouseForInput();
 	}
 
 	public void useMouseForInput() {
@@ -33,37 +45,57 @@ public class VehicleSelectionController extends JPanel implements MouseControlle
 
 	public void disableMouseInput() {
 		mouseForInput = false;
+		vehicleAction = e -> {}; // Clears the Consumer otherwise used by the action(MouseEvent) method.
+		buttonMap.forEach((s, jb) -> jb.setBackground(null)); // Clears the graphical selection from all buttons.
 	}
 
 	private void addVehicle(String modelName) {
-		if (mouseForInput)
-			vehicleAction = e -> model.addCar(modelName, e.getPoint());
+		if (mouseForInput) {
+			vehicleAction = e -> model.addCar(modelName, e.getPoint()); // Sets the Consumer triggered by action(MouseEvent) to instruct the model to add a vehicle at the MouseEvent's location.
+			markButton(modelName); // Shows graphically which action is currently selected.
+		}
 		else
-			model.addCar(modelName);
+			model.addCar(modelName); //Instructs the model to add the specified vehicle at no particular place.
 	}
 
-	private void removeVehicle() {
-		if (mouseForInput)
+	private void markButton(String buttonKey) { // Shows graphically which action is currently selected and clears the marking of the rest.
+		buttonMap.forEach((s, jb) -> jb.setBackground(null));
+		buttonMap.get(buttonKey).setBackground(Color.RED);
+	}
+
+	private void removeVehicle() { // Instructs the model to remove a vehicle. Either closest to the MouseEvent or at its own discretion.
+		if (mouseForInput) {
 			vehicleAction = e -> model.removeCar(e.getPoint());
+			markButton("removeButton");
+		}
 		else
 			model.removeCar();
 	}
 
 	@Override
-	public void action(MouseEvent e) {
+	public void action(MouseEvent e) { // Calls a Consumer function when the MouseControllerListener is triggered.
 		vehicleAction.accept(e);
 	}
 
-	private void fillInternalJPanel(String[] modelNames) {
+	private void fillInternalJPanel(String[] modelNames) { // Sets upp the buttons and adds ActionListeners to them.
 
-		for (String modelName : modelNames) {
+		buttonMap = new LinkedHashMap<>(); // The buttons are stored in a map so the graphics can be updated when selected.
+
+		for (String modelName : modelNames) { // Adds buttons as specified in the parameters
 			JButton tempButton = new JButton(modelName);
 			tempButton.addActionListener(e -> addVehicle(modelName));
-			internalJPanel.add(tempButton);
+			buttonMap.put(modelName, tempButton);
 		}
 
-		JButton removeButton = new JButton("Remove Vehicle");
+		JButton removeButton = new JButton("<html>Remove <br/> Vehicle</html>");
 		removeButton.addActionListener(e -> removeVehicle());
-		internalJPanel.add(removeButton);
+		buttonMap.put("removeButton", removeButton);
+
+		JButton mouseToggle = new JButton("<html>Toggle <br/> Mouse</html>");
+		mouseToggle.addActionListener(e -> toggleMouse());
+		buttonMap.put("mouseToggle", mouseToggle);
+
+		buttonMap.forEach((s, jb) -> internalJPanel.add(jb)); // adds the buttons to the internal JPanel.
 	}
 }
+

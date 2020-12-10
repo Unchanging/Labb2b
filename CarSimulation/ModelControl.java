@@ -1,10 +1,10 @@
 package CarSimulation;
 
-//TODO change to interface
-
 import java.awt.*;
 
 public interface ModelControl {
+
+	//An interface implemented by the CarModel and used by classes which want to control the model.
 
 	void updateModel();
 	void setModelArea(Dimension dimension);

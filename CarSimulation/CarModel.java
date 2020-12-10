@@ -11,11 +11,11 @@ import java.util.stream.Collectors;
 public class CarModel implements ModelControl, ModelPresenter{
 
 	private final List<GeneralVehicle> cars;
-	private Dimension modelArea;
+	private Dimension modelArea; // Used for calculating when vehicles collide with the "walls".
 	private final List<VehicleListListener> vehicleListListeners = new ArrayList<>();
 	private final List<VehicleUpdateListener> updateListeners = new ArrayList<>();
 	private final Map<VehiclePresentation, Dimension> vehicleModelSizes = new HashMap<>(); //Clients can specify the dimensions of the simulated Vehicles. Optional
-	private int y; // vertical offset between each vehicle. Supposed to be incremented with each new car added.
+	private int y; // vertical offset between each vehicle. Supposed to be incremented with each new car added without a specified location.
 
 	public CarModel(int X, int Y) {
 		cars = new ArrayList<>();
@@ -24,18 +24,16 @@ public class CarModel implements ModelControl, ModelPresenter{
 
 	@Override
 	public void updateModel() {
-		synchronized (cars) { //TODO fix thread safety
-			for (GeneralVehicle car : cars) {
-				detectVehicleCollision(car);
-				car.move();
-				turnAtEdgeCollision(car);
-			}
-			callUpdateListeners();
+		for (GeneralVehicle car : cars) {
+			detectVehicleCollision(car); // Detects if two vehicles are going to intersect when they move next time and turns them away from each other.
+			turnAtEdgeCollision(car); // Turns the vehicle towards an appropriate direction if the projected movement would have placed it outside of the modelArea.
+			car.move(); // advances the vehicle along its trajectory.
 		}
+		callUpdateListeners();
 	}
 
 	@Override
-	public void addCar(String modelName, Point point) {
+	public void addCar(String modelName, Point point) { // creates and adds a car at a specified location. Will do nothing if there are 10 or more cars in the model.
 		if (cars.size() < 10) {
 			GeneralVehicle car = VehicleFactory.createByParameter(modelName);
 			car.setPosition(point);
@@ -45,30 +43,31 @@ public class CarModel implements ModelControl, ModelPresenter{
 	}
 
 	@Override
-	public void addCar(String modelName) {
+	public void addCar(String modelName) { // overloaded method which adds a Point as an argument and call the method addCar(String, Point).
 		addCar(modelName, new Point(0, y));
-		y += 100;
+		y += 100; // advances the vertical offset between added cars.
 	}
 
 	@Override
-	public void removeCar(Point point) {
-		if (cars.size() > 0)
-			cars.stream().sorted((thisCar, otherCar) -> (int)(thisCar.getPosition().distance(point) - otherCar.getPosition().distance(point)))
-					.findFirst()
-					.ifPresent(c -> cars.remove(c));
+	public void removeCar(Point point) { // Removes the vehicle closest to the specified point in th model. Does not do anything if the model has 0 vehicles.
+
+		cars.stream() // creates a stream of all the vehicles in the model
+				.sorted((thisCar, otherCar) -> (int)(thisCar.getPosition().distance(point) - otherCar.getPosition().distance(point))) // sorts them according to the proximity to the specified point
+				.findFirst() //find the closest vehicle to the point
+				.ifPresent(c -> cars.remove(c)); // if a vehicle is found then remove it.
 		callVehicleListListeners();
 	}
 
 	@Override
-	public void removeCar() {
+	public void removeCar() { // overloaded method which find the location of the earliest added vehicle and calls the removeCar(Point) with that location.
 		if (cars.size() > 0)
 			removeCar(cars.get(0).getPosition());
 	}
 
 	private void turnAtEdgeCollision(GeneralVehicle car) {
-		int X = (int) (modelArea.getWidth() - getCarDimension(car).getWidth());
+		int X = (int) (modelArea.getWidth() - getCarDimension(car).getWidth()); // create boundaries by subtracting the size of the car from the modelArea.
 		int Y = (int) (modelArea.getHeight() - getCarDimension(car).getHeight());
-		if (car.getMovementProjection().getX() < 0)
+		if (car.getMovementProjection().getX() < 0) //turn toward an appropriate direction if the next movement would have placed the vehicle outside the boundaries
 			turnerHelper(car, 0);
 		else if (car.getMovementProjection().getX() > X )
 			turnerHelper(car, Math.PI);
@@ -80,13 +79,13 @@ public class CarModel implements ModelControl, ModelPresenter{
 
 	private void detectVehicleCollision(GeneralVehicle thisCar){
 		Dimension thisCarDimension = getCarDimension(thisCar);
-		Rectangle2D thisCarRect = new Rectangle(thisCar.getPosition(), thisCarDimension);
+		Rectangle2D thisCarRect = new Rectangle(thisCar.getMovementProjection(), thisCarDimension); // create a rectangle object which models the vehicle for collisions
 
-		for (GeneralVehicle otherCar : cars.stream().filter(c -> !c.equals(thisCar)).collect(Collectors.toUnmodifiableList())) {
+		for (GeneralVehicle otherCar : cars.stream().filter(c -> !c.equals(thisCar)).collect(Collectors.toUnmodifiableList())) { // find all other vehicles in the model and loop through them
 			Dimension otherCarDimension = getCarDimension(otherCar);
-			Rectangle2D otherCarRect = new Rectangle(otherCar.getPosition(), otherCarDimension);
+			Rectangle2D otherCarRect = new Rectangle(otherCar.getMovementProjection(), otherCarDimension); // create a rectangle object to model the other vehicle
 
-			if (thisCarRect.intersects(otherCarRect)) {
+			if (thisCarRect.intersects(otherCarRect)) { // if the two rectangles intersect turn each vehicle away from the other.
 				turnerHelper(thisCar, getDirectionAwayFrom(thisCar, otherCar));
 				turnerHelper(otherCar, getDirectionAwayFrom(otherCar, thisCar));
 			}
@@ -97,9 +96,8 @@ public class CarModel implements ModelControl, ModelPresenter{
 		double deltaX = firstCar.getPosition().getX() - secondCar.getPosition().getX(); // calculated the difference in x between the cars
 		double deltaY = firstCar.getPosition().getY() - secondCar.getPosition().getY(); // calculated the difference in y between the cars
 		double res =  Math.atan2(deltaY, deltaX); //function which returns the angle corresponding to the change in x and y
-		if (res < 0)
-			res += 2 * Math.PI;
-		return res;
+
+		return res < 0 ? res + 2 * Math.PI : res; // return the direction as a positive radian.
 	}
 
 	private void turnerHelper(GeneralVehicle car, double directionRadians) { //turns the car around until the car faces the desired direction with a small tolerance
@@ -109,15 +107,11 @@ public class CarModel implements ModelControl, ModelPresenter{
 
 	@Override
 	public Iterator<? extends VehiclePresentation> getVehicleIterator() {
-//		synchronized (cars) {
-//			return cars.stream().iterator(); // TODO Fix thread safety
-//		}
-//
-		return new ArrayList<>(cars).iterator();
+		return new ArrayList<>(cars).iterator(); // TODO: Inefficient. Redo once we understand thread safety and concurrency issues
 	}
 
 	@Override
-	public void setVehicleDimension(VehiclePresentation car, Dimension dimension) {
+	public void setVehicleDimension(VehiclePresentation car, Dimension dimension) { // Used by clients if they want to specify how the dimensions of the vehicles.
 		vehicleModelSizes.putIfAbsent(car, dimension);
 	}
 
@@ -126,7 +120,6 @@ public class CarModel implements ModelControl, ModelPresenter{
 			return vehicleModelSizes.get(car);
 		return new Dimension(100, 50);
 	}
-
 
 	public void addVehicleListListeners(VehicleListListener listener) {
 		vehicleListListeners.add(listener);

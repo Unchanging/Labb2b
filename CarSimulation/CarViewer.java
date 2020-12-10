@@ -16,11 +16,10 @@ public class CarViewer extends JPanel implements VehicleListListener, VehicleUpd
 	private Map<VehiclePresentation, CarGraphics> carGraphicsMap;
 	private final ModelPresenter model;
 
-	// Initializes the panel and reads the images
 	public CarViewer(ModelPresenter model, int x, int y) {
-
 		this.model = model;
 		carGraphicsMap = new HashMap<>();
+
 		this.setDoubleBuffered(true);
 		this.setPreferredSize(new Dimension(x, y));
 		this.setBackground(Color.WHITE);
@@ -29,7 +28,7 @@ public class CarViewer extends JPanel implements VehicleListListener, VehicleUpd
 	@Override
 	public void paintComponent(Graphics g) {
 		super.paintComponent(g); // Draws the viewing area.
-		carGraphicsMap.forEach((key, value) -> value.drawYourself(g, key)); // call upon all vehicles to redraw themselves.
+		carGraphicsMap.forEach((key, value) -> value.drawYourself(g, key)); // call upon all CarGraphics objects to redraw themselves.
 	}
 
 	private Map<VehiclePresentation, CarGraphics> generateCarGraphicsMap() {
@@ -52,7 +51,7 @@ public class CarViewer extends JPanel implements VehicleListListener, VehicleUpd
 	}
 
 	@Override
-	public void vehicleUpdate() {//calls the repaint method even the update observer is triggered.
+	public void vehicleUpdate() {//calls the repaint method when the update observer is triggered.
 		repaint();
 	}
 

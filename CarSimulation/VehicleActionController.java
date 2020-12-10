@@ -2,18 +2,12 @@ package CarSimulation;
 import javax.swing.*;
 import java.awt.*;
 
-public class VehicleActionController extends JPanel{
+public class VehicleActionController extends JPanel{ // A controller for instructing the model of actions to take with the current vehicles.
 
-	// The controller member
-	private static int X;
-
-	private ModelControl modelControl;
-
+	private final ModelControl modelControl;
 	private final JPanel controlPanel = new JPanel();
-
 	private final JPanel gasPanel = new JPanel();
-	private JSpinner gasSpinner = new JSpinner();
-	int gasAmount = 50;
+	private int gasAmount = 50;
 	private final JLabel gasLabel = new JLabel("Amount of gas");
 
 	private final JButton gasButton = new JButton("Gas");
@@ -28,22 +22,22 @@ public class VehicleActionController extends JPanel{
 
 	// Constructor
 	public VehicleActionController(ModelControl modelControl, int width){
-		this.X = width;
 		this.modelControl = modelControl;
 
 		this.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-		initComponents();
+		initComponents(width); // Fixes the graphical aspect of the buttons.
+		addListenersToButtons(); // Connect the buttons to actionListeners.
 	}
 
 	// Sets everything in place and fits everything
-	private void initComponents() {
+	private void initComponents(int X) {
 
 		SpinnerModel spinnerModel =
 				new SpinnerNumberModel(gasAmount, //initial value
 						0, //min
 						100, //max
 						1);//step
-		gasSpinner = new JSpinner(spinnerModel);
+		JSpinner gasSpinner = new JSpinner(spinnerModel);
 		gasSpinner.addChangeListener(e -> gasAmount = (int) ((JSpinner)e.getSource()).getValue());
 
 		gasPanel.setLayout(new BorderLayout());
@@ -75,8 +69,6 @@ public class VehicleActionController extends JPanel{
 		stopButton.setForeground(Color.black);
 		stopButton.setPreferredSize(new Dimension(X/5-15,200));
 		this.add(stopButton);
-
-		addListenersToButtons();
 	}
 
 	private void addListenersToButtons() {
