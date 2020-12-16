@@ -22,7 +22,7 @@ public class Scania implements Truck, PlatformControl{
 	 * @param degreesIncrease The angle to lift the raise the platform
 	 */
 	public void raisePlatform(double degreesIncrease){
-		if (getCurrentSpeed() != 0) {
+		if (getCurrentSpeed() == 0) {
 			platformAngle += degreesIncrease;
 			if (platformAngle > 70)
 				platformAngle = 70;

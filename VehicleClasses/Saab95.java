@@ -5,7 +5,7 @@ import java.awt.*;
 /**
  *  A class for a VehicleClasses.Saab95
  */
-public class Saab95 implements Car {
+public class Saab95 implements Car, TurboControl{
 	private boolean turboOn;
 	private Vehicle vehicleModel;
 
